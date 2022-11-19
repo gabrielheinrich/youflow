@@ -1,4 +1,12 @@
-import { ref, onMounted, onUpdated, watch, SetupContext, Ref } from "vue";
+import {
+  ref,
+  onMounted,
+  onUpdated,
+  watch,
+  SetupContext,
+  Ref,
+  watchEffect,
+} from "vue";
 import { DraggableItem } from "../types/draggable-item.interface";
 import { changeArrayOrder } from "../utils/change-order";
 import { getIdGenerator } from "../utils/id-generator";
@@ -22,6 +30,10 @@ const useDraggableContainer = (
   const items = ref<Array<DraggableItem>>(
     toDraggableItems(originalItems.value)
   );
+
+  watchEffect(() => {
+    items.value = toDraggableItems(originalItems.value);
+  });
 
   // update v-model when dropped
   watch(itemCurrentlyDragging, () => {
