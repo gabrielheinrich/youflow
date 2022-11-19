@@ -34,13 +34,13 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from "vue-router"
+import { useRouter } from "vue-router";
 
-const router = useRouter()
+const router = useRouter();
 
 const createNewRoutine = () => {
-  router.push({ name: "RoutineEditor", params: { id: "new" } })
-}
+  router.push({ name: "RoutineEditor", params: { id: "new" } });
+};
 </script>
 
 <style scoped></style>
