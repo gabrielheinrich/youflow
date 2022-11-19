@@ -10,6 +10,11 @@ const useStore = defineStore({
   id: `user`,
   state: () => ({} as WorkoutStore),
   actions: {},
+  getters: {
+    getExerciseById: (state) => (id: string) => {
+      return state.exercises.find((e) => e.id === id);
+    },
+  },
 });
 
 if (import.meta.hot) {
