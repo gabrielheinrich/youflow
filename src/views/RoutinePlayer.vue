@@ -16,7 +16,10 @@
       ></div>
     </div>
   </div>
-  <div class="absolute flex gap-4 justify-center bottom-16 w-screen z-[1000]">
+  <div
+    class="absolute flex gap-4 justify-center items-center bottom-2 h-[180px] w-screen z-[1000]"
+    :class="{ 'bg-black': paused }"
+  >
     <div class="rounded-lg flex justify-center gap-4 w-64 h-8 text-white">
       <button
         @click="goBack"
@@ -30,9 +33,14 @@
         @click="playOrPause"
         class="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer flex items-center justify-center w-16 h-16 rounded"
       >
-        <i-material-symbols-arrow-forward-ios-rounded
-          class="w-5 h-5 translate-x-0"
-        ></i-material-symbols-arrow-forward-ios-rounded>
+        <i-material-symbols-play-arrow
+          v-if="playerState != 1"
+          class="w-5 h-5"
+        ></i-material-symbols-play-arrow>
+        <i-material-symbols-pause-outline
+          v-else
+          class="w-5 h-5"
+        ></i-material-symbols-pause-outline>
       </button>
       <button
         @click="goNext"
@@ -80,13 +88,34 @@ const workout = workoutStore.workouts.find((w) => w.id == props.id)!
 
 setShowVideo(false)
 
+//enum PlayerState
+//     {
+//         UNSTARTED = -1,
+//         ENDED = 0,
+//         PLAYING = 1,
+//         PAUSED = 2,
+//         BUFFERING = 3,
+//         CUED = 5
+//     }
+const playerState = ref(-1 as YT.PlayerState)
+const paused = ref(false)
+let ytPlayer: YT.Player
+
 const goNext = () => router.back()
 const goBack = () => router.back()
 const exitVideo = () => router.back()
-const playOrPause = () => {}
+const playOrPause = () => {
+  if (playerState.value == YT.PlayerState.PLAYING) {
+    ytPlayer.pauseVideo()
+    paused.value = true
+  } else {
+    ytPlayer.playVideo()
+    setTimeout(() => {
+      paused.value = false
+    }, 100)
+  }
+}
 
-// console.log(YoutubeIFrameLoader)
-const playerState = ref(-1)
 watch(
   () => playerState.value,
   (playerState) => {
@@ -94,14 +123,14 @@ watch(
   }
 )
 
-let ytPlayer: YT.Player
-
 const initPlayer = async () => {
   return new Promise((resolve, reject) => {
     YoutubeIFrameLoader.load((YT) => {
       ytPlayer = new YT.Player("player", {
         playerVars: {
           controls: 0,
+          modestbranding: 1,
+          showInfo: 0,
         },
         events: {
           onReady: () => {
