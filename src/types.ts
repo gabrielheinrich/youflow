@@ -17,6 +17,8 @@ export type VideoSourceType = "youtube"
 export interface Exercise {
   id: string
   srcType: VideoSourceType
+  /** is provider-speific id, e.g. Youtube Id */
+  srcId: string
   name: string
   description: string
   startSecond: number

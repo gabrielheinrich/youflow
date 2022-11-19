@@ -1,7 +1,7 @@
-import { createRouter, createWebHistory } from "vue-router";
-import Home from "@/views/Home.vue";
-import RoutineEditor from "@/views/RoutineEditor.vue";
-import RoutinePlayer from "@/views/RoutinePlayer.vue";
+import { createRouter, createWebHistory } from "vue-router"
+import Home from "@/views/Home.vue"
+import RoutineEditor from "@/views/RoutineEditor.vue"
+import RoutinePlayer from "@/views/RoutinePlayer.vue"
 
 const router = createRouter({
   history: createWebHistory(),
@@ -15,13 +15,15 @@ const router = createRouter({
       path: "/editor/:id",
       name: "RoutineEditor",
       component: RoutineEditor,
+      props: true,
     },
     {
       path: "/player/:id",
       name: "RoutinePlayer",
       component: RoutinePlayer,
+      props: true,
     },
   ],
-});
+})
 
-export default router;
+export default router

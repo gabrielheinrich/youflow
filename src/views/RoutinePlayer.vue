@@ -48,19 +48,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue"
+import { ref, onMounted } from "vue"
 import YoutubeIFrameLoader from "youtube-iframe"
 import { useRouter } from "vue-router"
+import { getWorkoutStore } from "@/stores/workoutStore"
+
+const workoutStore = getWorkoutStore()
 
 const router = useRouter()
 
-const videoElement = ref<HTMLElement | null>(null)
+const props = defineProps<{
+  id: string
+}>()
 
 const iframeClass = ref("blackedout")
 
 const setShowVideo = (shouldShow: boolean) => {
   iframeClass.value = shouldShow ? "visible" : "blackedout"
 }
+
+const workout = workoutStore.workouts.find((w) => w.id == props.id)!
 
 setShowVideo(false)
 
@@ -114,10 +121,17 @@ const playClip = async (
 }
 
 onMounted(async () => {
-  await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
-  await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
-  await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
-  await playClip("ZbtVVYBLCug", 8 * 60 + 55, 9 * 60 + 30)
+  for (const timelineItem of workout.timeline) {
+    const exercise = workoutStore.exercises.find(
+      (w) => w.id == timelineItem.exerciseId
+    )!
+
+    await playClip(exercise.srcId, exercise.startSecond, exercise.endSecond)
+  }
+  // await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
+  // await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
+  // await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
+  // await playClip("ZbtVVYBLCug", 8 * 60 + 55, 9 * 60 + 30)
 })
 
 // const iframeRef = ref();
