@@ -36,10 +36,10 @@
 </template>
 
 <script setup lang="ts">
-import AppHeader from "@/components/AppHeader.vue"
-import { getWorkoutStore } from "@/stores/workoutStore"
+import AppHeader from "@/components/AppHeader.vue";
+import { getWorkoutStore } from "@/stores/workoutStore";
 
-const workoutStore = getWorkoutStore()
+const workoutStore = getWorkoutStore();
 const routines = [
   {
     id: "1",
@@ -57,7 +57,7 @@ const routines = [
     id: "4",
     title: "Meditation",
   },
-]
+];
 </script>
 
 <style scoped></style>

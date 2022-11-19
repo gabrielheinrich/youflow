@@ -24,4 +24,5 @@ export interface Exercise {
   startSecond: number;
   endSecond: number;
   thumbprintSecond?: number;
+  thumbnailUrl?: string;
 }

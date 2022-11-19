@@ -9,13 +9,13 @@
               <h2 class="text-sm uppercase font-semibold tracking-wide">
                 Exercise Library
               </h2>
-              <router-link
-                :to="{ name: 'ExerciseImport' }"
+              <button
+                @click="showImporter = !showImporter"
                 class="flex items-center space-x-2 border px-2 py-1 border-black rounded-md text-sm"
               >
                 <span>Import from YouTube</span>
                 <i-material-symbols:youtube-activity class="text-lg" />
-              </router-link>
+              </button>
             </div>
           </header>
           <div class="w-full bg-black mb-2 aspect-video relative text-white">
@@ -90,17 +90,20 @@
               Save
             </button>
           </div>
-          <div>Total Duration: {{ totalDuration }}s</div>
         </div>
         <div class="relative flex justify-center py-8">
           <div class="bg-black w-full aspect-video max-w-screen-md"></div>
         </div>
         <div>
-          <h2
-            class="text-center mb-1 uppercase tracking-wide font-medium text-sm"
-          >
-            Timeline
-          </h2>
+          <div class="flex space-x-4 items-baseline">
+            <h2 class="mb-1 uppercase tracking-wide font-medium text-sm">
+              Timeline
+            </h2>
+            <span class="text-xs"
+              >Total Duration: {{ formatTime(totalDuration) }}</span
+            >
+          </div>
+
           <div class="relative h-24">
             <div
               class="absolute inset-0 overflow-auto w-full bg-gray-50 border p-2"
@@ -111,7 +114,10 @@
               >
                 <template v-slot:item="{ item }">
                   <TimelineItem
-                    class="w-36 aspect-video border bg-black text-white grid place-content-center"
+                    class="w-36 aspect-video bg-black text-white grid place-content-center border-4 border-transparent"
+                    :class="{
+                      'border-red-400': selection?.id == item.id,
+                    }"
                     :item="item"
                     @delete="deleteTimelineItem(item)"
                     @click="
@@ -146,6 +152,19 @@
       </div>
     </div>
   </div>
+  <div
+    v-if="showImporter"
+    class="fixed inset-0 h-screen w-screen pointer-events-none grid place-content-center"
+  >
+    <div
+      class="pointer-events-auto max-w-screen-lg w-screen p-2 pt-2 pb-4 bg-white rounded-sm shadow-md border"
+    >
+      <ExerciseImport
+        @import="showImporter = false"
+        @close="showImporter = false"
+      />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -158,6 +177,8 @@ import { TimelineItem as TTimelineItem, Workout } from "@/types";
 import { ulid } from "ulid";
 import TimelineItem from "@/components/TimelineItem.vue";
 import { getWorkoutStore } from "@/stores/workoutStore";
+import ExerciseImport from "@/components/ExerciseImport.vue";
+import { formatTime } from "@/utils/formatTime";
 
 interface EntityId {
   id: string;
@@ -169,6 +190,8 @@ const selection = ref<EntityId>();
 const store = getWorkoutStore();
 
 const titleRef = ref<HTMLInputElement>();
+
+const showImporter = ref<boolean>(false);
 
 const props = defineProps<{
   id?: string;

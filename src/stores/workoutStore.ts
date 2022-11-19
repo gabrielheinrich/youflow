@@ -1,18 +1,26 @@
 import { Exercise, Workout } from "@/types";
 import { acceptHMRUpdate, defineStore } from "pinia";
+import { getExerciseThumbnail } from "@/utils/getExerciseThumbnail";
 
 interface WorkoutStore {
   workouts: Workout[];
   exercises: Exercise[];
 }
 
-const useStore = defineStore({
-  id: `user`,
-  state: () => ({} as WorkoutStore),
+const useStore = defineStore("workouts", {
+  state: () =>
+    ({
+      workouts: [],
+      exercises: [],
+    } as WorkoutStore),
   actions: {},
   getters: {
     getExerciseById: (state) => (id: string) => {
       return state.exercises.find((e) => e.id === id);
+    },
+    getExerciseThumbnail: (state) => (id: string) => {
+      const exercise: Exercise = state.exercises.find((e) => e.id === id);
+      return getExerciseThumbnail(exercise);
     },
   },
 });

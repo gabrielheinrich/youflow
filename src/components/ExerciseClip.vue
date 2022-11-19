@@ -1,6 +1,7 @@
 <template>
   <div
-    class="aspect-video bg-black text-white grid place-content-center"
+    class="aspect-video bg-black text-white grid place-content-center bg-cover bg-center"
+    :style="{ backgroundImage: `url(${thumbnailUrl})` }"
     ref="draggableItemEl"
     draggable="true"
     @transitionStart="transitionStart"
@@ -16,10 +17,18 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, nextTick, PropType, defineEmits } from "vue";
+import {
+  defineComponent,
+  ref,
+  nextTick,
+  PropType,
+  defineEmits,
+  computed,
+} from "vue";
 import { useDraggableItem } from "@/draggable";
 import { ulid } from "ulid";
 import { Exercise, TimelineItem } from "@/types";
+import { getExerciseThumbnail } from "@/utils/getExerciseThumbnail";
 
 interface DragTimelineItem {
   id: string;
@@ -59,6 +68,10 @@ export default defineComponent({
       },
     });
 
+    const thumbnailUrl = computed(() => {
+      return getExerciseThumbnail(props.exercise);
+    });
+
     const {
       draggableItemEl,
       isDragging,
@@ -84,6 +97,7 @@ export default defineComponent({
       onDragEnd,
       transitionStart,
       transitionEnd,
+      thumbnailUrl,
     };
   },
 });
