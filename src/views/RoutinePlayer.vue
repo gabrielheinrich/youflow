@@ -143,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue"
+import { ref, onMounted, watch, computed, onUnmounted } from "vue"
 import beepSound from "../../public/beeps.wav"
 import YoutubeIFrameLoader from "youtube-iframe"
 import { useRouter } from "vue-router"
@@ -210,6 +210,7 @@ const goBack = () => {
   // if we are > 2 seonds into video, get to start of video
   if (ytPlayer.getCurrentTime() > activeExercise.value.startSecond + 2) {
     ytPlayer.seekTo(activeExercise.value.startSecond, true)
+    resetAudio()
     return
   }
 
@@ -224,6 +225,7 @@ const playOrPause = () => {
   if (playerState.value == YT.PlayerState.PLAYING) {
     ytPlayer.pauseVideo()
     paused.value = true
+    audio.pause()
 
     showSymbol.value = "pause"
     clearTimeout(symbolTimer)
@@ -233,6 +235,10 @@ const playOrPause = () => {
     setTimeout(() => {
       paused.value = false
     }, 100)
+
+    if (audio.currentTime > 0) {
+      audio.play()
+    }
 
     showSymbol.value = "play"
     clearTimeout(symbolTimer)
@@ -272,7 +278,15 @@ const initPlayer = async () => {
 const timeProgress = ref(0)
 const secondsLeft = ref(0)
 const isPlaying = ref(false)
-let lastBeepSoundIndex = -1
+let beepPlayedForTimeline = false
+
+let audio = new Audio(beepSound)
+
+const resetAudio = () => {
+  audio.pause()
+  audio = new Audio(beepSound)
+  beepPlayedForTimeline = false
+}
 
 const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
   if (!workout.timeline[timelineStep]) return
@@ -287,6 +301,7 @@ const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
   setShowVideo(true)
 
   isPlaying.value = true
+  resetAudio()
 
   return new Promise((resolve, reject) => {
     let aborted = false
@@ -303,10 +318,9 @@ const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
       // console.log("progress", timeProgress.value, secondsLeft.value)
 
       if (currentTime > exercise.endSecond - 4.5) {
-        if (timelineStep != lastBeepSoundIndex) {
-          var audio = new Audio(beepSound)
+        if (!beepPlayedForTimeline) {
           audio.play()
-          lastBeepSoundIndex = timelineStep
+          beepPlayedForTimeline = true
         }
       }
 
@@ -327,8 +341,10 @@ const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
 
     signal.addEventListener("abort", () => {
       ytPlayer.stopVideo()
+      audio.pause()
       aborted = true
       isPlaying.value = false
+
       // clearInterval(interval)
       reject(new DOMException("Video Play Cancelled", "AbortError"))
     })
@@ -382,6 +398,8 @@ onMounted(async () => {
   await initPlayer()
   await playTimelineStep(0, controller.signal)
 })
+
+onUnmounted(() => audio.pause())
 </script>
 
 <style scoped>
