@@ -16,16 +16,17 @@
           @click="createNewRoutine"
           class="h-8 border rounded-md whitespace-nowrap flex space-x-1 items-center text-sm px-2"
         >
-          <Icon
+          <i-material-symbols-video-call-outline-rounded
             class="text-xl"
-            icon="material-symbols:video-call-outline-rounded"
-          />
+          ></i-material-symbols-video-call-outline-rounded>
           <span>Create a new routine</span>
         </button>
         <button
           class="text-xl w-8 h-8 border rounded-md grid place-content-center"
         >
-          <Icon icon="material-symbols:settings-outline" />
+          <i-material-symbols-settings-outline
+            class="text-xl"
+          ></i-material-symbols-settings-outline>
         </button>
       </div>
     </header>
@@ -33,14 +34,13 @@
 </template>
 
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
-import { useRouter } from "vue-router";
+import { useRouter } from "vue-router"
 
-const router = useRouter();
+const router = useRouter()
 
 const createNewRoutine = () => {
-  router.push({ name: "RoutineEditor", params: { id: "new" } });
-};
+  router.push({ name: "RoutineEditor", params: { id: "new" } })
+}
 </script>
 
 <style scoped></style>

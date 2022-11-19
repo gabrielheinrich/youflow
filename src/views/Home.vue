@@ -23,7 +23,9 @@
                 :to="{ name: 'RoutineEditor', params: { id: routine.id } }"
                 class="border rounded-full text-lg h-10 w-10 grid place-content-center"
               >
-                <Icon icon="material-symbols:movie-edit-outline-sharp"></Icon>
+                <i-material-symbols-movie-edit-outline-sharp
+                  class="text-xl"
+                ></i-material-symbols-movie-edit-outline-sharp>
               </router-link>
             </div>
           </div>
@@ -34,8 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
-import AppHeader from "@/components/AppHeader.vue";
+import AppHeader from "@/components/AppHeader.vue"
 
 const routines = [
   {
@@ -54,7 +55,7 @@ const routines = [
     id: "4",
     title: "Meditation",
   },
-];
+]
 </script>
 
 <style scoped></style>
