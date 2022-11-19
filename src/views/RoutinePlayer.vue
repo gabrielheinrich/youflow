@@ -281,10 +281,12 @@ const isPlaying = ref(false)
 let beepPlayedForTimeline = false
 
 let audio = new Audio(beepSound)
+audio.volume = 0.2
 
 const resetAudio = () => {
   audio.pause()
   audio = new Audio(beepSound)
+  audio.volume = 0.2
   beepPlayedForTimeline = false
 }
 
@@ -300,8 +302,9 @@ const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
   await waitMs(200)
   setShowVideo(true)
 
-  isPlaying.value = true
   resetAudio()
+
+  announceExercise("Next Exercise: " + exercise.name)
 
   return new Promise((resolve, reject) => {
     let aborted = false
@@ -309,11 +312,14 @@ const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
     requestAnimationFrame(function step(time: number) {
       const currentTime = ytPlayer.getCurrentTime()
 
-      timeProgress.value =
-        (exercise.endSecond - currentTime) /
-        (exercise.endSecond - exercise.startSecond)
+      if (currentTime > exercise.startSecond) {
+        timeProgress.value =
+          (exercise.endSecond - currentTime) /
+          (exercise.endSecond - exercise.startSecond)
 
-      secondsLeft.value = Math.round(exercise.endSecond - currentTime)
+        secondsLeft.value = Math.round(exercise.endSecond - currentTime)
+        isPlaying.value = true
+      }
 
       // console.log("progress", timeProgress.value, secondsLeft.value)
 
@@ -329,6 +335,8 @@ const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
       }
       if (currentTime > exercise.endSecond) {
         ytPlayer.stopVideo()
+        timeProgress.value = 0
+        secondsLeft.value = 0
 
         stepIndex.value++
         resolve(undefined)
@@ -366,6 +374,10 @@ watch(
   }
 )
 
+/**
+ * PROGRESS CIRCLE
+ */
+
 const circleColor = ref("#55b303")
 
 /** from https://stackoverflow.com/a/27905268/830213 */
@@ -393,6 +405,22 @@ function circlePath(cx: number, cy: number, r: number) {
   )
 }
 const svgPath = computed(() => circlePath(22, 22, 50))
+
+var msg = new SpeechSynthesisUtterance()
+var voices = window.speechSynthesis.getVoices()
+
+/**
+ * SPEECH TO TEXT ANNOUNCEMENT
+ */
+const announceExercise = (announcement: string) => {
+  msg.voice = voices[0]
+  msg.volume = 1 // From 0 to 1
+  msg.rate = 0.9 // From 0.1 to 10
+  msg.pitch = 1 // From 0 to 2
+  msg.text = announcement
+  msg.lang = "en"
+  speechSynthesis.speak(msg)
+}
 
 onMounted(async () => {
   await initPlayer()
