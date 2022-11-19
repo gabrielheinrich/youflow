@@ -27,6 +27,14 @@
         ></i-material-symbols-arrow-back-ios-rounded>
       </button>
       <button
+        @click="playOrPause"
+        class="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer flex items-center justify-center w-16 h-16 rounded"
+      >
+        <i-material-symbols-arrow-forward-ios-rounded
+          class="w-5 h-5 translate-x-0"
+        ></i-material-symbols-arrow-forward-ios-rounded>
+      </button>
+      <button
         @click="goNext"
         class="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer flex items-center justify-center w-16 h-16 rounded"
       >
@@ -48,10 +56,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue"
+import { ref, onMounted, watch } from "vue"
 import YoutubeIFrameLoader from "youtube-iframe"
 import { useRouter } from "vue-router"
 import { getWorkoutStore } from "@/stores/workoutStore"
+import { Workout } from "@/types"
 
 const workoutStore = getWorkoutStore()
 
@@ -74,45 +83,32 @@ setShowVideo(false)
 const goNext = () => router.back()
 const goBack = () => router.back()
 const exitVideo = () => router.back()
-// console.log(YoutubeIFrameLoader)
+const playOrPause = () => {}
 
-const playClip = async (
-  videoId: string,
-  startTime: number,
-  endTime: number
-) => {
+// console.log(YoutubeIFrameLoader)
+const playerState = ref(-1)
+watch(
+  () => playerState.value,
+  (playerState) => {
+    console.log("playerState", playerState)
+  }
+)
+
+let ytPlayer: YT.Player
+
+const initPlayer = async () => {
   return new Promise((resolve, reject) => {
     YoutubeIFrameLoader.load((YT) => {
-      const player = new YT.Player("player", {
-        // height: "390",
-        // width: "640",
-        videoId: videoId,
+      ytPlayer = new YT.Player("player", {
         playerVars: {
           controls: 0,
         },
         events: {
           onReady: () => {
-            player.seekTo(startTime, true)
-            player.mute()
-            player.playVideo()
-
-            setTimeout(() => {
-              setShowVideo(true)
-            }, 1000)
-
-            const interval = setInterval(() => {
-              console.log(player.getCurrentTime())
-
-              if (player.getCurrentTime() > endTime - 1) {
-                setShowVideo(false)
-              }
-              if (player.getCurrentTime() > endTime) {
-                player.pauseVideo()
-                clearInterval(interval)
-                player.destroy()
-                resolve(undefined)
-              }
-            }, 1000)
+            resolve(undefined)
+          },
+          onStateChange: (event: YT.OnStateChangeEvent) => {
+            playerState.value = event.data
           },
         },
       })
@@ -120,26 +116,53 @@ const playClip = async (
   })
 }
 
-onMounted(async () => {
-  for (const timelineItem of workout.timeline) {
+const playClip = async (
+  videoId: string,
+  startTime: number,
+  endTime: number
+) => {
+  ytPlayer.loadVideoById(videoId, startTime)
+  // ytPlayer.seekTo(startTime, true)
+  ytPlayer.mute()
+  ytPlayer.playVideo()
+
+  setTimeout(() => {
+    setShowVideo(true)
+  }, 200)
+
+  return new Promise((resolve, reject) => {
+    const interval = setInterval(() => {
+      console.log(ytPlayer.getCurrentTime())
+
+      if (ytPlayer.getCurrentTime() > endTime - 0.5) {
+        setShowVideo(false)
+      }
+      if (ytPlayer.getCurrentTime() > endTime) {
+        ytPlayer.stopVideo()
+        // ytPlayer.pauseVideo()
+        clearInterval(interval)
+        // ytPlayer.destroy()
+        resolve(undefined)
+      }
+    }, 1000)
+  })
+}
+
+const playWorkout = async (wo: Workout) => {
+  await initPlayer()
+
+  for (const timelineItem of wo.timeline) {
     const exercise = workoutStore.exercises.find(
       (w) => w.id == timelineItem.exerciseId
     )!
 
     await playClip(exercise.srcId, exercise.startSecond, exercise.endSecond)
   }
-  // await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
-  // await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
-  // await playClip("raUEsDttCL4", 4 * 60 + 14, 4 * 60 + 18)
-  // await playClip("ZbtVVYBLCug", 8 * 60 + 55, 9 * 60 + 30)
+}
+
+onMounted(async () => {
+  playWorkout(workout)
 })
-
-// const iframeRef = ref();
-
-// onMounted(() => {
-//   const player = new YTPlayer("#player");
-//   player.load("raUEsDttCL4");
-// });
 </script>
 
 <style scoped>
