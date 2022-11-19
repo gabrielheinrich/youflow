@@ -22,12 +22,12 @@
       <transition
         enter-active-class="transition-[transform,opacity] duration-500 ease"
         enter-from-class="scale-75 opacity-100"
-        enter-to-class="scale-105 opacity-20"
+        enter-to-class="scale-105 opacity-0"
         leave-active-class="hidden"
       >
         <div
           v-if="showSymbol == 'pause'"
-          class="text-white rounded-full bg-gray-800/60 p-4"
+          class="text-white rounded-full bg-gray-800 p-4"
         >
           <i-material-symbols-pause-outline class="w-16 h-16">
           </i-material-symbols-pause-outline>
@@ -36,12 +36,12 @@
       <transition
         enter-active-class="transition-[transform,opacity] duration-500 ease"
         enter-from-class="scale-75 opacity-100"
-        enter-to-class="scale-105 opacity-20"
+        enter-to-class="scale-105 opacity-0"
         leave-active-class="hidden"
       >
         <div
           v-if="showSymbol == 'play'"
-          class="text-white rounded-full bg-gray-800/60 p-4"
+          class="text-white rounded-full bg-gray-800 p-4"
         >
           <i-material-symbols-play-arrow class="w-16 h-16">
           </i-material-symbols-play-arrow>
@@ -51,17 +51,22 @@
   </div>
 
   <div
-    class="absolute flex gap-4 justify-center items-end top-2 h-[100px] w-screen z-40"
+    class="absolute flex gap-4 justify-center items-end top-0 h-[100px] w-screen z-40"
     :class="{ 'bg-black': paused }"
   >
-    <div class="p-4 bg-gray-900 rounded-md text-gray-200 text-xl">
-      <span class="">{{ activeExercise?.name }}</span>
-      &nbsp;
-      <span>{{ activeIndexString }}</span>
-    </div>
+    <TimelineItemOverview
+      :timeline-item="activeTimelineItem"
+      :exercise="activeExercise"
+      :phase="stepPhase"
+      :exercise-rep="stepExerciseRep"
+      :workout-length="workout.timeline.length"
+      :segment-index="timelineItemIndex"
+      :seconds-left="secondsLeft"
+    >
+    </TimelineItemOverview>
   </div>
   <div
-    class="absolute flex gap-4 justify-center items-center bottom-2 h-[180px] w-screen z-[1000]"
+    class="absolute flex gap-4 justify-center items-center bottom-0 h-[180px] w-screen z-[1000]"
     :class="{ 'bg-black': paused }"
   >
     <div class="rounded-lg flex justify-center gap-4 w-64 h-8 text-white">
@@ -107,6 +112,20 @@
   </div>
 
   <div
+    v-if="stepPhase == 'cooldown'"
+    class="absolute pointer-events-none inset-0 flex gap-4 justify-center items-center bottom-0 h-screen w-screen z-[1000]"
+  >
+    <div
+      class="rounded-lg flex flex-col items-center justify-center gap-8 w-64 h-8 text-white"
+    >
+      <span class="text-4xl">Cooldown</span>
+      <span class="text-lg text-center w-full"
+        >Take a breath, you're doing awesome!</span
+      >
+    </div>
+  </div>
+
+  <div
     v-if="isPlaying"
     class="absolute pointer-events-none top-0 left-0 flex items-center w-screen h-screen z-[2000]"
   >
@@ -142,6 +161,10 @@
   </div>
 </template>
 
+<script lang="ts">
+export type StepPhaseType = "prepare" | "exercise" | "cooldown"
+</script>
+
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, onUnmounted } from "vue"
 import beepSound from "../../public/beeps.wav"
@@ -149,9 +172,10 @@ import YoutubeIFrameLoader from "youtube-iframe"
 import { useRouter } from "vue-router"
 import { getWorkoutStore } from "@/stores/workoutStore"
 
-const workoutStore = getWorkoutStore()
+import TimelineItemOverview from "./RoutinePlayerTimelineItemOverview.vue"
+import { Exercise } from "@/types"
 
-console.log("beepSound", beepSound)
+const workoutStore = getWorkoutStore()
 
 const router = useRouter()
 
@@ -168,23 +192,34 @@ const setShowVideo = (shouldShow: boolean) => {
 }
 
 const workout = workoutStore.workouts.find((w) => w.id == props.id)!
-const stepIndex = ref(0)
+const timelineItemIndex = ref(0)
 /** used to cancel current video play on skip */
 let controller = new AbortController()
 
-const activeTimelineStep = computed(() => workout.timeline[stepIndex.value])
+const activeTimelineItem = computed(
+  () => workout.timeline[timelineItemIndex.value]
+)
 const activeExercise = computed(
   () =>
     workoutStore.exercises.find(
-      (e) => e.id == activeTimelineStep.value.exerciseId
+      (e) => e.id == activeTimelineItem.value.exerciseId
     )!
 )
-const activeIndexString = computed(
-  () => stepIndex.value + 1 + " / " + workout.timeline.length
-)
-
 const waitMs = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms))
+
+const isPlaying = ref(false)
+let beepPlayedForTimeline = false
+
+let audio = new Audio(beepSound)
+audio.volume = 0.2
+
+const resetAudio = () => {
+  audio.pause()
+  audio = new Audio(beepSound)
+  audio.volume = 0.2
+  beepPlayedForTimeline = false
+}
 
 setShowVideo(false)
 
@@ -202,9 +237,16 @@ const paused = ref(false)
 let ytPlayer: YT.Player
 let symbolTimer: any
 
+// watch(
+//   () => playerState.value,
+//   (playerState) => {
+//     console.log("playerState", playerState)
+//   }
+// )
+
 const goNext = () => {
-  if (stepIndex.value == workout.timeline.length - 1) return
-  stepIndex.value++
+  if (timelineItemIndex.value == workout.timeline.length - 1) return
+  timelineItemIndex.value++
 }
 const goBack = () => {
   // if we are > 2 seonds into video, get to start of video
@@ -214,9 +256,9 @@ const goBack = () => {
     return
   }
 
-  if (stepIndex.value == 0) return
+  if (timelineItemIndex.value == 0) return
 
-  stepIndex.value--
+  timelineItemIndex.value--
 }
 
 const exitVideo = () => router.back()
@@ -246,13 +288,6 @@ const playOrPause = () => {
   }
 }
 
-// watch(
-//   () => playerState.value,
-//   (playerState) => {
-//     console.log("playerState", playerState)
-//   }
-// )
-
 const initPlayer = async () => {
   return new Promise((resolve) => {
     YoutubeIFrameLoader.load((YT) => {
@@ -271,53 +306,200 @@ const initPlayer = async () => {
           },
         },
       })
+      ytPlayer.mute()
     })
   })
 }
 
 const timeProgress = ref(0)
 const secondsLeft = ref(0)
-const isPlaying = ref(false)
-let beepPlayedForTimeline = false
+const stepPhase = ref("prepare" as StepPhaseType)
+const stepExerciseRep = ref(0)
 
-let audio = new Audio(beepSound)
-audio.volume = 0.2
+const playTimelineItem = async (
+  timelineStepIndex: number,
+  signal: AbortSignal
+) => {
+  stepExerciseRep.value = 0
 
-const resetAudio = () => {
-  audio.pause()
-  audio = new Audio(beepSound)
-  audio.volume = 0.2
-  beepPlayedForTimeline = false
-}
-
-const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
-  if (!workout.timeline[timelineStep]) return
-  const exerciseId = workout.timeline[timelineStep].exerciseId
-  const exercise = workoutStore.exercises.find((e) => e.id == exerciseId)!
-
-  ytPlayer.loadVideoById(exercise.srcId, exercise.startSecond)
-  ytPlayer.mute()
-  ytPlayer.playVideo()
-
-  await waitMs(200)
-  setShowVideo(true)
-
-  resetAudio()
+  const timelineStep = workout.timeline[timelineStepIndex]
+  if (!timelineStep) return
+  const exercise = workoutStore.exercises.find(
+    (e) => e.id == timelineStep.exerciseId
+  )!
 
   announceExercise("Next Exercise: " + exercise.name)
+
+  /** PREPARE phase */
+  stepPhase.value = "prepare"
+
+  const prepareStep = { ...exercise }
+  // todo
+  const PREPARE_LENGTH = 5
+  prepareStep.endSecond = prepareStep.startSecond + PREPARE_LENGTH
+
+  await playTimelineItemStep(
+    prepareStep,
+    (progress, secsLeft) => {
+      timeProgress.value = progress
+      // console.log("p", progress)
+
+      secondsLeft.value = secsLeft
+    },
+    () => {},
+    signal
+  )
+
+  /** EXERCISE phase with reps */
+  stepPhase.value = "exercise"
+
+  const repCount = timelineStep.exerciseReps
+  let timeProgressBase = 0
+  let secondsLeftBase = 0
+  const secondsPerExercise = exercise.endSecond - exercise.startSecond
+
+  for (let i = 0; i < repCount; i++) {
+    stepExerciseRep.value = i + 1
+    timeProgressBase = 1 - i * (1 / repCount)
+    secondsLeftBase = (repCount - (i + 1)) * secondsPerExercise
+
+    // console.log("timeProgressBase", timeProgressBase)
+
+    await playTimelineItemStep(
+      exercise,
+      (progress, secsLeft) => {
+        timeProgress.value = timeProgressBase - (1 - progress) * (1 / repCount)
+        secondsLeft.value = secondsLeftBase + secsLeft
+      },
+      () => {},
+      signal,
+      // todo: figure out why setting "true" doesn't just play repeat without fadout
+      false
+    )
+    // timeProgressBase =
+  }
+
+  /** COOLDOWN phase with reps */
+  stepPhase.value = "cooldown"
+
+  runCooldownCountdown(timelineStep.cooldownTimeSecs)
+  await waitMs(timelineStep.cooldownTimeSecs * 1000)
+
+  timelineItemIndex.value++
+}
+
+const runCooldownCountdown = (seconds: number) => {
+  const targetTime = performance.now() + seconds * 1000
+  const startTime = performance.now()
+  isPlaying.value = true
+
+  requestAnimationFrame(function step(time: number) {
+    if (paused.value) {
+      // TODO: bug with cooldown pause/play not working, this should be handled by saving timestamp on pause etc.
+    }
+    timeProgress.value = (targetTime - time) / (targetTime - startTime)
+
+    secondsLeft.value = Math.round((targetTime - time) / 1000)
+
+    if (time > targetTime) {
+      isPlaying.value = false
+      return
+    }
+    requestAnimationFrame(step)
+  })
+}
+
+const playTimelineRepeatStep = async (
+  exercise: Exercise,
+  onTimeUpdate: (progress: number, secondsLeft: number) => void,
+  signal: AbortSignal
+) => {
+  ytPlayer.playVideoAt(exercise.startSecond)
 
   return new Promise((resolve, reject) => {
     let aborted = false
 
-    requestAnimationFrame(function step(time: number) {
+    requestAnimationFrame(function step() {
       const currentTime = ytPlayer.getCurrentTime()
 
       if (currentTime > exercise.startSecond) {
-        timeProgress.value =
+        onTimeUpdate(
           (exercise.endSecond - currentTime) /
-          (exercise.endSecond - exercise.startSecond)
+            (exercise.endSecond - exercise.startSecond),
+          Math.round(exercise.endSecond - currentTime)
+        )
 
-        secondsLeft.value = Math.round(exercise.endSecond - currentTime)
+        isPlaying.value = true
+      }
+
+      // console.log("progress", timeProgress.value, secondsLeft.value)
+
+      if (currentTime > exercise.endSecond - 4.5) {
+        // if (!beepPlayedForTimeline) {
+        //   audio.play()
+        //   beepPlayedForTimeline = true
+        // }
+      }
+
+      if (currentTime > exercise.endSecond - 0.5) {
+      }
+      if (currentTime > exercise.endSecond) {
+        ytPlayer.stopVideo()
+
+        resolve(undefined)
+        isPlaying.value = false
+        return
+      }
+      if (aborted) return
+      requestAnimationFrame(step)
+    })
+
+    signal.addEventListener("abort", () => {
+      ytPlayer.stopVideo()
+      audio.pause()
+      aborted = true
+      isPlaying.value = false
+
+      // clearInterval(interval)
+      reject(new DOMException("Video Play Cancelled", "AbortError"))
+    })
+  })
+}
+
+const playTimelineItemStep = async (
+  exercise: Exercise,
+  onTimeUpdate: (progress: number, secondsLeft: number) => void,
+  onEnd: () => void,
+  signal: AbortSignal,
+  isRepeat?: boolean
+) => {
+  if (isRepeat) {
+    ytPlayer.pauseVideo()
+    ytPlayer.seekTo(exercise.startSecond, true)
+    ytPlayer.playVideo()
+  } else {
+    ytPlayer.loadVideoById(exercise.srcId, exercise.startSecond)
+    ytPlayer.playVideo()
+    await waitMs(200)
+  }
+
+  setShowVideo(true)
+
+  resetAudio()
+
+  return new Promise((resolve, reject) => {
+    let aborted = false
+
+    requestAnimationFrame(function step() {
+      const currentTime = ytPlayer.getCurrentTime()
+
+      if (currentTime > exercise.startSecond) {
+        onTimeUpdate(
+          (exercise.endSecond - currentTime) /
+            (exercise.endSecond - exercise.startSecond),
+          Math.round(exercise.endSecond - currentTime)
+        )
+
         isPlaying.value = true
       }
 
@@ -331,14 +513,12 @@ const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
       }
 
       if (currentTime > exercise.endSecond - 0.5) {
-        setShowVideo(false)
+        if (!isRepeat) setShowVideo(false)
       }
       if (currentTime > exercise.endSecond) {
         ytPlayer.stopVideo()
-        timeProgress.value = 0
-        secondsLeft.value = 0
 
-        stepIndex.value++
+        onEnd()
         resolve(undefined)
         isPlaying.value = false
         return
@@ -364,13 +544,13 @@ const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
 // once play ends "jumpToNext" video and add index
 // watcher on index then controls video player
 watch(
-  () => stepIndex.value,
+  () => timelineItemIndex.value,
   (step) => {
     // cancel any old play promise in case we skipped segment
     controller.abort()
 
     controller = new AbortController()
-    playTimelineStep(step, controller.signal)
+    playTimelineItem(step, controller.signal)
   }
 )
 
@@ -424,10 +604,15 @@ const announceExercise = (announcement: string) => {
 
 onMounted(async () => {
   await initPlayer()
-  await playTimelineStep(0, controller.signal)
+  await playTimelineItem(0, controller.signal)
 })
 
-onUnmounted(() => audio.pause())
+onUnmounted(() => {
+  ytPlayer.destroy()
+
+  audio.pause()
+  speechSynthesis.pause()
+})
 </script>
 
 <style scoped>
