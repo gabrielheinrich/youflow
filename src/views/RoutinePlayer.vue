@@ -20,9 +20,9 @@
     </div>
     <div class="absolute w-full h-full flex items-center justify-center">
       <transition
-        enter-active-class="transition-[transform,opacity] duration-500 ease-out"
+        enter-active-class="transition-[transform,opacity] duration-500 ease"
         enter-from-class="scale-75 opacity-100"
-        enter-to-class="scale-105 opacity-80"
+        enter-to-class="scale-105 opacity-20"
         leave-active-class="hidden"
       >
         <div
@@ -34,9 +34,9 @@
         </div>
       </transition>
       <transition
-        enter-active-class="transition-[transform,opacity] duration-500 ease-out"
+        enter-active-class="transition-[transform,opacity] duration-500 ease"
         enter-from-class="scale-75 opacity-100"
-        enter-to-class="scale-105 opacity-70"
+        enter-to-class="scale-105 opacity-20"
         leave-active-class="hidden"
       >
         <div
@@ -49,8 +49,9 @@
       </transition>
     </div>
   </div>
+
   <div
-    class="absolute flex gap-4 justify-center items-end top-2 h-[100px] w-screen z-[1000] bg-black"
+    class="absolute flex gap-4 justify-center items-end top-2 h-[100px] w-screen z-40 bg-black"
   >
     <div class="p-4 bg-gray-900 rounded-md text-gray-200 text-xl">
       <span class="">{{ activeExercise?.name }}</span>
@@ -101,6 +102,41 @@
           class="w-5 h-5 translate-x-0"
         ></i-material-symbols-fullscreen-exit>
       </button>
+    </div>
+  </div>
+
+  <div
+    v-if="isPlaying"
+    class="absolute pointer-events-none top-0 left-0 flex items-center w-screen h-screen z-[2000]"
+  >
+    <div class="w-screen aspect-video relative">
+      <div class="relative w-36 h-36 flex items-center justify-center">
+        <span class="timer text-white text-4xl">
+          {{ secondsLeft }}
+        </span>
+        <svg
+          class="absolute top-[50px] left-[45px] rotate-90"
+          :width="50"
+          :height="50"
+          :style="`--chart-color: ${circleColor}; --stroke-offset: ${timeProgress};`"
+        >
+          <defs>
+            <filter y="-40%" x="-40%" height="180%" width="180%">
+              <feGaussianBlur
+                :stdDeviation="3"
+                result="coloredBlur"
+              ></feGaussianBlur>
+              <feMerge>
+                <feMergeNode in="coloredBlur"></feMergeNode>
+                <feMergeNode in="SourceGraphic"></feMergeNode>
+              </feMerge>
+            </filter>
+          </defs>
+          <g :style="`--stroke-width: ${12}px;`">
+            <path class="value" pathLength="1" :d="svgPath"></path>
+          </g>
+        </svg>
+      </div>
     </div>
   </div>
 </template>
@@ -208,7 +244,7 @@ watch(
 )
 
 const initPlayer = async () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     YoutubeIFrameLoader.load((YT) => {
       ytPlayer = new YT.Player("player", {
         playerVars: {
@@ -229,7 +265,12 @@ const initPlayer = async () => {
   })
 }
 
+const timeProgress = ref(0)
+const secondsLeft = ref(0)
+const isPlaying = ref(false)
+
 const playTimelineStep = async (step: number, signal: AbortSignal) => {
+  console.warn("playTimelineStep")
   const exerciseId = workout.timeline[step].exerciseId
   const exercise = workoutStore.exercises.find((e) => e.id == exerciseId)!
 
@@ -240,25 +281,42 @@ const playTimelineStep = async (step: number, signal: AbortSignal) => {
   await waitMs(200)
   setShowVideo(true)
 
-  return new Promise((resolve, reject) => {
-    const interval = setInterval(() => {
-      console.log("step " + step, ytPlayer.getCurrentTime())
+  isPlaying.value = true
 
-      if (ytPlayer.getCurrentTime() > exercise.endSecond - 0.5) {
+  return new Promise((resolve, reject) => {
+    let aborted = false
+
+    requestAnimationFrame(function step(time: number) {
+      const currentTime = ytPlayer.getCurrentTime()
+
+      timeProgress.value =
+        (exercise.endSecond - currentTime) /
+        (exercise.endSecond - exercise.startSecond)
+
+      secondsLeft.value = Math.round(exercise.endSecond - currentTime)
+
+      console.log("progress", timeProgress.value, secondsLeft.value)
+
+      if (currentTime > exercise.endSecond - 0.5) {
         setShowVideo(false)
       }
-      if (ytPlayer.getCurrentTime() > exercise.endSecond) {
+      if (currentTime > exercise.endSecond) {
         ytPlayer.stopVideo()
-        clearInterval(interval)
 
-        stepIndex.value = stepIndex.value + 1
+        stepIndex.value++
         resolve(undefined)
+        isPlaying.value = false
+        return
       }
-    }, 1000)
+      if (aborted) return
+      requestAnimationFrame(step)
+    })
 
     signal.addEventListener("abort", () => {
       ytPlayer.stopVideo()
-      clearInterval(interval)
+      aborted = true
+      isPlaying.value = false
+      // clearInterval(interval)
       reject(new DOMException("Video Play Cancelled", "AbortError"))
     })
   })
@@ -273,10 +331,40 @@ watch(
   (step) => {
     // cancel any old play promise in case we skipped segment
     controller.abort()
+    if (step > workout.timeline.length - 1) return
+
     controller = new AbortController()
     playTimelineStep(step, controller.signal)
   }
 )
+
+const circleColor = ref("#55b303")
+
+/** from https://stackoverflow.com/a/27905268/830213 */
+function circlePath(cx: number, cy: number, r: number) {
+  return (
+    "M " +
+    cx +
+    " " +
+    cy +
+    " m -" +
+    r +
+    ", 0 a " +
+    r +
+    "," +
+    r +
+    " 0 1,0 " +
+    r * 2 +
+    ",0 a " +
+    r +
+    "," +
+    r +
+    " 0 1,0 -" +
+    r * 2 +
+    ",0"
+  )
+}
+const svgPath = computed(() => circlePath(22, 22, 50))
 
 onMounted(async () => {
   await initPlayer()
@@ -295,5 +383,38 @@ onMounted(async () => {
 
 .visible {
   opacity: 0;
+}
+
+svg {
+  filter: drop-shadow(0 0 3px rgb(0 0 0 / 0.2))
+    drop-shadow(0 0 12px rgb(0 0 0 / 0.1));
+  /** see https://stackoverflow.com/a/39377282/830213, we need this in addition to y/height hack on filter */
+  overflow: visible;
+}
+
+path {
+  stroke: currentColor;
+  stroke-width: var(--stroke-width);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  fill-opacity: 0;
+}
+
+path.base {
+  color: #ccc;
+}
+
+.dark path.base {
+  color: #444;
+}
+path.value {
+  color: var(--chart-color);
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--stroke-offset));
+  /* transition: stroke-dashoffset 0.5s; */
+}
+
+.timer {
+  text-shadow: 0px 0px 6px hsl(0, 0%, 10%), 0px 0px 10px hsl(0, 0%, 50%);
 }
 </style>

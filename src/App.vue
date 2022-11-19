@@ -16,7 +16,7 @@ workoutStore.exercises = [
     srcType: "youtube",
     srcId: "raUEsDttCL4",
     startSecond: 54,
-    endSecond: 58,
+    endSecond: 62,
   },
   {
     id: "1",
