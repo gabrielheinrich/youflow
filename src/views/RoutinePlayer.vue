@@ -51,7 +51,8 @@
   </div>
 
   <div
-    class="absolute flex gap-4 justify-center items-end top-2 h-[100px] w-screen z-40 bg-black"
+    class="absolute flex gap-4 justify-center items-end top-2 h-[100px] w-screen z-40"
+    :class="{ 'bg-black': paused }"
   >
     <div class="p-4 bg-gray-900 rounded-md text-gray-200 text-xl">
       <span class="">{{ activeExercise?.name }}</span>
@@ -143,11 +144,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from "vue"
+import beepSound from "../../public/beeps.wav"
 import YoutubeIFrameLoader from "youtube-iframe"
 import { useRouter } from "vue-router"
 import { getWorkoutStore } from "@/stores/workoutStore"
 
 const workoutStore = getWorkoutStore()
+
+console.log("beepSound", beepSound)
 
 const router = useRouter()
 
@@ -236,12 +240,12 @@ const playOrPause = () => {
   }
 }
 
-watch(
-  () => playerState.value,
-  (playerState) => {
-    console.log("playerState", playerState)
-  }
-)
+// watch(
+//   () => playerState.value,
+//   (playerState) => {
+//     console.log("playerState", playerState)
+//   }
+// )
 
 const initPlayer = async () => {
   return new Promise((resolve) => {
@@ -268,10 +272,11 @@ const initPlayer = async () => {
 const timeProgress = ref(0)
 const secondsLeft = ref(0)
 const isPlaying = ref(false)
+let lastBeepSoundIndex = -1
 
-const playTimelineStep = async (step: number, signal: AbortSignal) => {
-  console.warn("playTimelineStep")
-  const exerciseId = workout.timeline[step].exerciseId
+const playTimelineStep = async (timelineStep: number, signal: AbortSignal) => {
+  if (!workout.timeline[timelineStep]) return
+  const exerciseId = workout.timeline[timelineStep].exerciseId
   const exercise = workoutStore.exercises.find((e) => e.id == exerciseId)!
 
   ytPlayer.loadVideoById(exercise.srcId, exercise.startSecond)
@@ -295,7 +300,15 @@ const playTimelineStep = async (step: number, signal: AbortSignal) => {
 
       secondsLeft.value = Math.round(exercise.endSecond - currentTime)
 
-      console.log("progress", timeProgress.value, secondsLeft.value)
+      // console.log("progress", timeProgress.value, secondsLeft.value)
+
+      if (currentTime > exercise.endSecond - 4.5) {
+        if (timelineStep != lastBeepSoundIndex) {
+          var audio = new Audio(beepSound)
+          audio.play()
+          lastBeepSoundIndex = timelineStep
+        }
+      }
 
       if (currentTime > exercise.endSecond - 0.5) {
         setShowVideo(false)
@@ -331,7 +344,6 @@ watch(
   (step) => {
     // cancel any old play promise in case we skipped segment
     controller.abort()
-    if (step > workout.timeline.length - 1) return
 
     controller = new AbortController()
     playTimelineStep(step, controller.signal)
