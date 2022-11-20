@@ -18,7 +18,9 @@
               </button>
             </div>
           </header>
-          <div class="w-full bg-black mb-2 aspect-video relative text-white">
+          <div
+            class="w-full bg-neutral-100 mb-2 aspect-video relative text-white"
+          >
             <div
               v-if="selectedExercise"
               class="absolute inset-0 grid grid-rows-3"
@@ -97,18 +99,42 @@
                 ref="titleRef"
               />
             </div>
-            <button class="border rounded-md px-2 py-1" @click="save">
-              Save
-            </button>
+            <div class="flex space-x-2">
+              <button
+                class="rounded-md px-4 border-black border py-1 font-medium hover:bg-neutral-00"
+                @click="save"
+              >
+                Save
+              </button>
+              <button
+                class="rounded-md px-4 border-black border py-1 font-medium hover:bg-neutral-00"
+                @click="remove"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
         <div class="py-8">
-          <h2 class="h-8 text-center font-medium text-lg">
-            <span v-if="selectedTimelineItem">
-              {{ selectedTimelineItem?.index! + 1 }} -
-              {{ selectedTimelineItem?.exercise.name }}
-            </span>
-          </h2>
+          <div
+            v-if="selectedTimelineItem"
+            class="flex space-x-4 max-w-screen-md mx-auto items-baseline mb-2"
+          >
+            <h2 class="h-8 font-medium text-2xl">
+              <span v-if="selectedTimelineItem">
+                {{ selectedTimelineItem?.index! + 1 }} -
+                {{ selectedTimelineItem?.exercise.name }}
+              </span>
+            </h2>
+            <div>
+              Duration:
+              {{
+                formatTime(
+                  totalDurationOfTimelineItem(selectedTimelineItem.item)
+                )
+              }}
+            </div>
+          </div>
           <div class="relative flex justify-center">
             <div
               class="bg-black bg-neutral-100 w-full aspect-video max-w-screen-md"
@@ -123,7 +149,67 @@
               />
             </div>
           </div>
+          <div
+            class="grid grid-cols-2 max-w-screen-sm mx-auto gap-4 mt-2"
+            v-if="selectedTimelineItem"
+          >
+            <div class="grid grid-cols-2">
+              <label>Reps</label>
+              <div class="grid grid-cols-[1fr_auto]">
+                <div class="border px-2 flex space-x-1">
+                  <input
+                    type="text"
+                    v-model.number="selectedTimelineItem.item.exerciseReps"
+                    class="text-right w-full"
+                  />
+                </div>
+                <div class="flex">
+                  <button
+                    class="w-6"
+                    @click="selectedTimelineItem.item.exerciseReps -= 1"
+                  >
+                    -
+                  </button>
+                  <button
+                    class="w-6"
+                    @click="selectedTimelineItem.item.exerciseReps += 1"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2">
+              <label>Cooldown</label>
+              <div class="grid grid-cols-[1fr_auto]">
+                <div class="border px-2 flex space-x-1">
+                  <input
+                    type="text"
+                    v-model.number="selectedTimelineItem.item.cooldownTimeSecs"
+                    class="text-right w-full"
+                  />
+                  <span>s</span>
+                </div>
+                <div class="flex">
+                  <button
+                    class="w-6"
+                    @click="selectedTimelineItem.item.cooldownTimeSecs -= 1"
+                  >
+                    -
+                  </button>
+
+                  <button
+                    class="w-6"
+                    @click="selectedTimelineItem.item.cooldownTimeSecs += 1"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
         <div>
           <div class="flex space-x-4 items-baseline">
             <h2 class="mb-1 uppercase tracking-wide font-medium text-sm">
@@ -171,7 +257,7 @@
           <div></div>
         </div>
       </div>
-      <div class="border-l max-w-sm w-screen h-full p-2">
+      <div class="border-l max-w-sm w-screen h-full p-2" v-if="false">
         <h2 class="mb-1 text-sm uppercase font-semibold tracking-wide">
           Inspector
         </h2>
@@ -229,6 +315,14 @@ const store = getWorkoutStore();
 const titleRef = ref<HTMLInputElement>();
 
 const showImporter = ref<boolean>(false);
+
+const totalDurationOfTimelineItem = (item: TTimelineItem) => {
+  const exercise = store.getExerciseById(item.exerciseId)!;
+  return (
+    item.exerciseReps * (exercise.endSecond - exercise.startSecond) +
+    item.cooldownTimeSecs
+  );
+};
 
 const props = defineProps<{
   id?: string;
@@ -310,6 +404,14 @@ const save = () => {
     store.workouts[index] = workout;
   }
 
+  router.push({ name: "Home" });
+};
+
+const remove = () => {
+  const index = store.workouts.findIndex((w) => w.id === routine.value.id);
+  if (index >= 0) {
+    store.workouts.splice(index, 1);
+  }
   router.push({ name: "Home" });
 };
 

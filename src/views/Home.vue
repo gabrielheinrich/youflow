@@ -20,13 +20,15 @@
               )})`,
             }"
           >
-            <h2>
+            <h2
+              class="bg-black rounded-md px-2 py-1 text-2xl font-medium bg-opacity-40 border"
+            >
               {{ workout.name }}
             </h2>
             <div class="absolute bottom-0 w-full flex justify-end p-2">
               <router-link
                 :to="{ name: 'RoutineEditor', params: { id: workout.id } }"
-                class="border rounded-full text-lg h-10 w-10 grid place-content-center"
+                class="border rounded-full text-lg h-10 w-10 grid place-content-center bg-black bg-opacity-40"
               >
                 <i-material-symbols-movie-edit-outline-sharp
                   class="text-xl"

@@ -12,7 +12,9 @@
     @dragenter.prevent
     :class="{ isDragging }"
   >
-    {{ exercise.name }}
+    <div class="bg-black bg-opacity-40 px-2 rounded-md font-medium py-1">
+      {{ exercise.name }}
+    </div>
   </div>
 </template>
 
