@@ -42,6 +42,7 @@
           (duration = $event.duration), (endPosition = Math.min(duration, 60))
         "
         stopAtEnd
+        :mute="false"
       />
     </div>
     <div>{{ formatTime(position) }}</div>

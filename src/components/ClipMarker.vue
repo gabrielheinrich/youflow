@@ -18,12 +18,14 @@
           :style="{ left: `${startPosition}px` }"
           ref="startMarkerRef"
           @click="emit('update:playHead', startPosition)"
+          draggable="false"
         ></div>
         <div
           class="w-[10px] h-8 bg-black border-l-2 border-red-500 absolute"
           :style="{ left: `${endPosition + 10}px` }"
           ref="endMarkerRef"
           @click="emit('update:playHead', endPosition - 1)"
+          draggable="false"
         ></div>
 
         <div

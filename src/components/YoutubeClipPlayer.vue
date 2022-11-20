@@ -18,11 +18,12 @@ const props = defineProps<{
   videoId: string;
   seekPosition?: number;
   stopAtEnd: boolean;
+  mute?: boolean;
 }>();
 
-console.log(props);
-
 const mounted = ref(false);
+
+const mute = props.mute ?? true;
 
 const emit = defineEmits<{
   (event: "update:position", payload: number): void;
@@ -49,7 +50,6 @@ const initPlayer = async (): Promise<YT.Player> => {
         },
         events: {
           onReady: () => {
-            console.log("ready");
             resolve(player);
           },
           onStateChange: (event: YT.OnStateChangeEvent) => {
@@ -77,13 +77,15 @@ watchEffect(async () => {
   if (!mounted.value) return;
   if (props.videoId) {
     if (!ytPlayer.value) {
-      console.log("creating Player");
       ytPlayer.value = await initPlayer(props.videoId);
-      ytPlayer.value.mute();
+      if (mute) {
+        ytPlayer.value.mute();
+      }
     }
 
     if (props.videoId != loadedVideoId) {
       ytPlayer.value.loadVideoById(props.videoId, props.startPosition);
+
       loadedVideoId = props.videoId;
       lastStartPosition = props.startPosition;
       ytPlayer.value.playVideo();
@@ -94,7 +96,6 @@ watchEffect(async () => {
       lastStartPosition = props.startPosition;
     }
   } else if (ytPlayer.value) {
-    console.log("destroying player");
     ytPlayer.value.destroy();
     ytPlayer.value = undefined;
   }
@@ -103,7 +104,6 @@ watchEffect(async () => {
 watch(
   () => props.seekPosition,
   () => {
-    console.log("position changed");
     if (props.seekPosition != undefined) {
       ytPlayer.value?.seekTo(props.seekPosition, true);
       if (props.playing) {
@@ -113,16 +113,24 @@ watch(
   }
 );
 
+let handledOverflow = false;
 onMounted(() => {
   const interval = setInterval(() => {
     if (!ytPlayer.value) return;
 
     emit("update:position", ytPlayer.value.getCurrentTime());
-    if (ytPlayer.value.getCurrentTime() >= props.endPosition) {
-      console.log("at end", props.stopAtEnd);
+    const hasRange = props.endPosition != props.startPosition;
+    if (
+      hasRange &&
+      ytPlayer.value.getCurrentTime() > props.endPosition &&
+      ytPlayer.value.getPlayerState() == YT.PlayerState.PLAYING
+    ) {
       if (props.stopAtEnd) {
-        console.log("stopping");
-        // ytPlayer.value.seekTo(props.endPosition, true);
+        if (ytPlayer.value.getCurrentTime() - props.endPosition > 4) {
+          ytPlayer.value.seekTo(props.startPosition, true);
+        } else {
+          ytPlayer.value.seekTo(props.endPosition, true);
+        }
         ytPlayer.value.pauseVideo();
       } else {
         ytPlayer.value.seekTo(props.startPosition, true);
@@ -133,23 +141,6 @@ onMounted(() => {
     clearInterval(interval);
   };
 });
-
-// watch(
-//   () => props.startPosition,
-//   () => {
-//     if (!ytPlayer.value) return;
-//     ytPlayer.value.seekTo(props.startPosition, true);
-//   }
-// );
-
-// // Sync position
-// watchEffect(() => {
-//   if (!ytPlayer.value) return;
-
-//   if (Math.abs(props.position - ytPlayer.value.getCurrentTime()) > 1) {
-//     ytPlayer.value.seekTo(props.position, true);
-//   }
-// });
 
 // Sync playstate
 watchEffect(() => {

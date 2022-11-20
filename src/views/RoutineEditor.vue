@@ -31,6 +31,7 @@
                 :playing="false"
                 :videoId="selectedExercise.srcId"
                 :position="selectedExercise.startSecond"
+                :mute="true"
               />
 
               <div
@@ -146,6 +147,7 @@
                 :playing="true"
                 :position="0"
                 :videoId="selectedTimelineItem.exercise.srcId"
+                :mute="true"
               />
             </div>
           </div>
