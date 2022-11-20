@@ -1,7 +1,8 @@
 <template>
   <div class="border-b">
     <header class="grid grid-cols-3 h-12 items-center px-3">
-      <router-link :to="{ name: 'Home' }">
+      <router-link :to="{ name: 'Home' }" class="flex space-x-2 items-center">
+        <img :src="logo" class="h-9 object-contain" />
         <h1 class="font-bold text-lg">YouFlow</h1></router-link
       >
       <div class="flex justify-center">
@@ -35,6 +36,9 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import logo from "@/assets/YouFlowLogo.svg";
+
+console.log(logo);
 
 const router = useRouter();
 
