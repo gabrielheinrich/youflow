@@ -96,7 +96,7 @@
               </button>
               <input
                 type="text"
-                class="text-2xl font-semibold"
+                class="text-2xl font-semibold w-full"
                 v-model="routine!.name"
                 ref="titleRef"
               />
