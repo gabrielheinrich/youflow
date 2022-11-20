@@ -18,6 +18,7 @@
         }"
       ></div>
     </div>
+
     <div class="absolute w-full h-full flex items-center justify-center">
       <transition
         enter-active-class="transition-[transform,opacity] duration-500 ease"
@@ -69,59 +70,33 @@
     class="absolute flex gap-4 justify-center items-center bottom-0 h-[180px] w-screen z-[1000]"
     :class="{ 'bg-black': paused }"
   >
-    <div class="rounded-lg flex justify-center gap-4 w-64 h-8 text-white">
-      <button
-        @click="goBack"
-        class="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer flex items-center justify-center w-16 h-14 rounded"
-      >
+    <div class="rounded-lg flex justify-center gap-4 h-8 text-white">
+      <button @click="goBack" class="btn">
         <i-material-symbols-arrow-back-ios-rounded
-          class="w-5 h-5 translate-x-1"
+          class="translate-x-1"
         ></i-material-symbols-arrow-back-ios-rounded>
       </button>
-      <button
-        @click="playOrPause"
-        class="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer flex items-center justify-center w-16 h-14 rounded"
-      >
+      <button @click="playOrPause" class="btn">
         <i-material-symbols-play-arrow
           v-if="playerState != 1"
-          class="w-5 h-5"
+          class=""
         ></i-material-symbols-play-arrow>
         <i-material-symbols-pause-outline
           v-else
-          class="w-5 h-5"
+          class=""
         ></i-material-symbols-pause-outline>
       </button>
-      <button
-        @click="goNext"
-        class="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer flex items-center justify-center w-16 h-14 rounded"
-      >
+      <button @click="goNext" class="btn">
         <i-material-symbols-arrow-forward-ios-rounded
-          class="w-5 h-5 translate-x-0"
+          class="translate-x-0"
         ></i-material-symbols-arrow-forward-ios-rounded>
       </button>
 
-      <button
-        @click="exitVideo"
-        class="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer flex items-center justify-center w-16 h-14 rounded"
-      >
+      <button @click="exitVideo" class="btn">
         <i-material-symbols-fullscreen-exit
-          class="w-5 h-5 translate-x-0"
+          class="translate-x-0"
         ></i-material-symbols-fullscreen-exit>
       </button>
-    </div>
-  </div>
-
-  <div
-    v-if="stepPhase == 'cooldown'"
-    class="absolute pointer-events-none inset-0 flex gap-4 justify-center items-center bottom-0 h-screen w-screen z-[1000]"
-  >
-    <div
-      class="rounded-lg flex flex-col items-center justify-center gap-8 w-64 h-8 text-white"
-    >
-      <span class="text-4xl">Cooldown</span>
-      <span class="text-lg text-center w-full"
-        >Take a breath, you're doing awesome!</span
-      >
     </div>
   </div>
 
@@ -130,7 +105,59 @@
     class="absolute pointer-events-none top-0 left-0 flex items-center w-screen h-screen z-[2000]"
   >
     <div class="w-screen aspect-video relative">
+      <div class="absolute inset-0 grid place-content-center">
+        <div
+          class="text-white font-bold text-6xl flex flex-col items-center"
+          v-if="stepPhase == 'prepare'"
+        >
+          <h1
+            class="bg-black bg-opacity-30 mb-2 px-2 py-1 rounded-md text-[8vh]"
+          >
+            Prepare
+          </h1>
+          <h2 class="bg-black bg-opacity-30 px-2 py-1 rounded-md text-[15vh]">
+            {{ activeExercise.name }}
+          </h2>
+        </div>
+        <transition
+          enter-active-class="transition-[transform,opacity] duration-500 ease"
+          leave-active-class="transition-[transform,opacity] duration-1000 ease"
+          enter-from-class="scale-50 opacity-0"
+          enter-to-class="scale-100 opacity-100"
+          leave-to-class="scale-150 opacity-0"
+        >
+          <div
+            class="text-white font-bold text-[50] flex flex-col items-center"
+            v-if="stepPhase == 'exercise' && timelineDuration - secondsLeft < 2"
+          >
+            <h1 class="bg-black bg-opacity-30 px-8 py-2 rounded-lg text-[15vh]">
+              Start
+            </h1>
+          </div>
+        </transition>
+
+        <transition
+          enter-active-class="transition-[transform,opacity] duration-500 ease"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+        >
+          <div
+            class="text-white font-bold text-6xl flex flex-col items-center"
+            v-if="stepPhase == 'cooldown'"
+          >
+            <h2 class="bg-black bg-opacity-30 px-2 py-1 rounded-md text-[15vh]">
+              Take a breath
+            </h2>
+            <h3 class="bg-black bg-opacity-30 px-2 py-1 rounded-md text-lg">
+              You're doing great!
+            </h3>
+          </div>
+        </transition>
+      </div>
       <div class="relative w-36 h-36 flex items-center justify-center">
+        <div
+          class="absolute inset-2 bg-black bg-opacity-10 rounded-full z-10"
+        ></div>
         <span class="timer text-white text-4xl">
           {{ secondsLeft }}
         </span>
@@ -251,8 +278,7 @@ const goNext = () => {
 const goBack = () => {
   // if we are > 2 seonds into video, get to start of video
   if (ytPlayer.getCurrentTime() > activeExercise.value.startSecond + 2) {
-    ytPlayer.seekTo(activeExercise.value.startSecond, true);
-    resetAudio();
+    resetTimeline(timelineItemIndex.value);
     return;
   }
 
@@ -307,13 +333,13 @@ const initPlayer = async () => {
           },
         },
       });
-      ytPlayer.mute();
     });
   });
 };
 
 const timeProgress = ref(0);
 const secondsLeft = ref(0);
+const timelineDuration = ref(0);
 const stepPhase = ref("prepare" as StepPhaseType);
 const stepExerciseRep = ref(0);
 
@@ -334,57 +360,68 @@ const playTimelineItem = async (
   /** PREPARE phase */
   stepPhase.value = "prepare";
 
-  const prepareStep = { ...exercise };
   // todo
-  const PREPARE_LENGTH = 5;
-  prepareStep.endSecond = prepareStep.startSecond + PREPARE_LENGTH;
+  const PREPARE_LENGTH = 10;
 
   await playTimelineItemStep(
-    prepareStep,
+    exercise,
     (progress, secsLeft) => {
-      timeProgress.value = progress;
+      timeProgress.value = 1 - progress;
       // console.log("p", progress)
 
       secondsLeft.value = secsLeft;
     },
     () => {},
-    signal
+    signal,
+    PREPARE_LENGTH,
+    {
+      fadeout: false,
+      stopAtEnd: false,
+    }
   );
 
   /** EXERCISE phase with reps */
   stepPhase.value = "exercise";
 
   const repCount = timelineStep.exerciseReps;
-  let timeProgressBase = 0;
-  let secondsLeftBase = 0;
+  // let timeProgressBase = 0;
+  // let secondsLeftBase = 0;
   const secondsPerExercise = exercise.endSecond - exercise.startSecond;
+  const totalDuration = secondsPerExercise * repCount;
 
-  for (let i = 0; i < repCount; i++) {
-    stepExerciseRep.value = i + 1;
-    timeProgressBase = 1 - i * (1 / repCount);
-    secondsLeftBase = (repCount - (i + 1)) * secondsPerExercise;
+  await playTimelineItemStep(
+    exercise,
+    (progress, secsLeft) => {
+      timeProgress.value = 1 - progress;
+      secondsLeft.value = secsLeft;
 
-    // console.log("timeProgressBase", timeProgressBase)
+      stepExerciseRep.value = Math.floor(progress * repCount) + 1;
+    },
+    () => {},
+    signal,
+    totalDuration,
+    {
+      fadeout: true,
+      stopAtEnd: true,
+    }
+  );
+  // for (let i = 0; i < repCount; i++) {
+  //   stepExerciseRep.value = i + 1;
+  //   timeProgressBase = 1 - i * (1 / repCount);
+  //   secondsLeftBase = (repCount - (i + 1)) * secondsPerExercise;
 
-    await playTimelineItemStep(
-      exercise,
-      (progress, secsLeft) => {
-        timeProgress.value = timeProgressBase - (1 - progress) * (1 / repCount);
-        secondsLeft.value = secondsLeftBase + secsLeft;
-      },
-      () => {},
-      signal,
-      // todo: figure out why setting "true" doesn't just play repeat without fadout
-      false
-    );
-    // timeProgressBase =
-  }
+  //   // console.log("timeProgressBase", timeProgressBase)
+
+  //   // timeProgressBase =
+  // }
 
   /** COOLDOWN phase with reps */
-  stepPhase.value = "cooldown";
+  if (timelineStep.cooldownTimeSecs) {
+    stepPhase.value = "cooldown";
 
-  runCooldownCountdown(timelineStep.cooldownTimeSecs);
-  await waitMs(timelineStep.cooldownTimeSecs * 1000);
+    runCooldownCountdown(timelineStep.cooldownTimeSecs);
+    await waitMs(timelineStep.cooldownTimeSecs * 1000);
+  }
 
   timelineItemIndex.value++;
 };
@@ -410,79 +447,94 @@ const runCooldownCountdown = (seconds: number) => {
   });
 };
 
-const playTimelineRepeatStep = async (
-  exercise: Exercise,
-  onTimeUpdate: (progress: number, secondsLeft: number) => void,
-  signal: AbortSignal
-) => {
-  ytPlayer.playVideoAt(exercise.startSecond);
+// const playTimelineRepeatStep = async (
+//   exercise: Exercise,
+//   onTimeUpdate: (progress: number, secondsLeft: number) => void,
+//   signal: AbortSignal
+// ) => {
+//   ytPlayer.playVideoAt(exercise.startSecond);
 
-  return new Promise((resolve, reject) => {
-    let aborted = false;
+//   return new Promise((resolve, reject) => {
+//     let aborted = false;
 
-    requestAnimationFrame(function step() {
-      const currentTime = ytPlayer.getCurrentTime();
+//     requestAnimationFrame(function step() {
+//       const currentTime = ytPlayer.getCurrentTime();
 
-      if (currentTime > exercise.startSecond) {
-        onTimeUpdate(
-          (exercise.endSecond - currentTime) /
-            (exercise.endSecond - exercise.startSecond),
-          Math.round(exercise.endSecond - currentTime)
-        );
+//       if (currentTime > exercise.startSecond) {
+//         onTimeUpdate(
+//           (exercise.endSecond - currentTime) /
+//             (exercise.endSecond - exercise.startSecond),
+//           Math.round(exercise.endSecond - currentTime)
+//         );
 
-        isPlaying.value = true;
-      }
+//         isPlaying.value = true;
+//       }
 
-      // console.log("progress", timeProgress.value, secondsLeft.value)
+//       // console.log("progress", timeProgress.value, secondsLeft.value)
 
-      if (currentTime > exercise.endSecond - 4.5) {
-        // if (!beepPlayedForTimeline) {
-        //   audio.play()
-        //   beepPlayedForTimeline = true
-        // }
-      }
+//       if (currentTime > exercise.endSecond - 4.5) {
+//         // if (!beepPlayedForTimeline) {
+//         //   audio.play()
+//         //   beepPlayedForTimeline = true
+//         // }
+//       }
 
-      if (currentTime > exercise.endSecond - 0.5) {
-      }
-      if (currentTime > exercise.endSecond) {
-        ytPlayer.stopVideo();
+//       if (currentTime > exercise.endSecond - 0.5) {
+//       }
+//       if (currentTime > exercise.endSecond) {
+//         ytPlayer.stopVideo();
 
-        resolve(undefined);
-        isPlaying.value = false;
-        return;
-      }
-      if (aborted) return;
-      requestAnimationFrame(step);
-    });
+//         resolve(undefined);
+//         isPlaying.value = false;
+//         return;
+//       }
+//       if (aborted) return;
+//       requestAnimationFrame(step);
+//     });
 
-    signal.addEventListener("abort", () => {
-      ytPlayer.stopVideo();
-      audio.pause();
-      aborted = true;
-      isPlaying.value = false;
+//     signal.addEventListener("abort", () => {
+//       ytPlayer.stopVideo();
+//       audio.pause();
+//       aborted = true;
+//       isPlaying.value = false;
 
-      // clearInterval(interval)
-      reject(new DOMException("Video Play Cancelled", "AbortError"));
-    });
-  });
-};
+//       // clearInterval(interval)
+//       reject(new DOMException("Video Play Cancelled", "AbortError"));
+//     });
+//   });
+// };
+
+let loadedVideoId = "";
 
 const playTimelineItemStep = async (
   exercise: Exercise,
   onTimeUpdate: (progress: number, secondsLeft: number) => void,
   onEnd: () => void,
   signal: AbortSignal,
-  isRepeat?: boolean
+  totalDuration: number,
+  options: {
+    fadeout: boolean;
+    stopAtEnd: boolean;
+  }
 ) => {
-  if (isRepeat) {
-    ytPlayer.pauseVideo();
-    ytPlayer.seekTo(exercise.startSecond, true);
+  timelineDuration.value = totalDuration;
+
+  if (
+    exercise.srcId != loadedVideoId ||
+    isPlaying.value == false ||
+    ytPlayer.getPlayerState() != YT.PlayerState.PLAYING
+  ) {
+    ytPlayer.loadVideoById(exercise.srcId, exercise.startSecond);
+    loadedVideoId = exercise.srcId;
+    await waitMs(200);
     ytPlayer.playVideo();
   } else {
-    ytPlayer.loadVideoById(exercise.srcId, exercise.startSecond);
-    ytPlayer.playVideo();
+    ytPlayer.seekTo(exercise.startSecond, true);
     await waitMs(200);
   }
+
+  let timeElapsed = 0;
+  let currentTime = exercise.startSecond;
 
   setShowVideo(true);
 
@@ -492,43 +544,51 @@ const playTimelineItemStep = async (
     let aborted = false;
 
     requestAnimationFrame(function step() {
-      const currentTime = ytPlayer.getCurrentTime();
-
-      if (currentTime > exercise.startSecond) {
+      const newTime = ytPlayer.getCurrentTime();
+      if (newTime < exercise.endSecond && newTime > currentTime) {
+        timeElapsed += newTime - currentTime;
         onTimeUpdate(
-          (exercise.endSecond - currentTime) /
-            (exercise.endSecond - exercise.startSecond),
-          Math.round(exercise.endSecond - currentTime)
+          timeElapsed / totalDuration,
+          Math.round(totalDuration - timeElapsed)
         );
 
-        isPlaying.value = true;
+        if (!isPlaying.value) isPlaying.value = true;
+      }
+      if (newTime) {
+        currentTime = newTime;
       }
 
       // console.log("progress", timeProgress.value, secondsLeft.value)
 
-      if (currentTime > exercise.endSecond - 4.5) {
+      if (timeElapsed > totalDuration - 4.5) {
         if (!beepPlayedForTimeline) {
           audio.play();
           beepPlayedForTimeline = true;
         }
       }
 
-      if (currentTime > exercise.endSecond - 0.5) {
-        if (!isRepeat) setShowVideo(false);
+      if (options.fadeout && timeElapsed > totalDuration - 2) {
+        setShowVideo(false);
       }
-      if (currentTime > exercise.endSecond) {
-        ytPlayer.stopVideo();
+      if (timeElapsed >= totalDuration) {
+        if (options.stopAtEnd) {
+          ytPlayer.stopVideo();
+          isPlaying.value = false;
+        }
 
-        onEnd();
         resolve(undefined);
-        isPlaying.value = false;
         return;
+      }
+      if (currentTime >= exercise.endSecond) {
+        ytPlayer.seekTo(exercise.startSecond, true);
+        currentTime = exercise.startSecond;
       }
       if (aborted) return;
       requestAnimationFrame(step);
     });
 
     signal.addEventListener("abort", () => {
+      console.log("stop");
       ytPlayer.stopVideo();
       audio.pause();
       aborted = true;
@@ -540,6 +600,13 @@ const playTimelineItemStep = async (
   });
 };
 
+const resetTimeline = (step: number) => {
+  controller.abort();
+
+  controller = new AbortController();
+  playTimelineItem(step, controller.signal);
+};
+
 // play queue: timeline items
 // play next thing which is active thing
 // once play ends "jumpToNext" video and add index
@@ -547,11 +614,7 @@ const playTimelineItemStep = async (
 watch(
   () => timelineItemIndex.value,
   (step) => {
-    // cancel any old play promise in case we skipped segment
-    controller.abort();
-
-    controller = new AbortController();
-    playTimelineItem(step, controller.signal);
+    resetTimeline(step);
   }
 );
 
@@ -559,7 +622,7 @@ watch(
  * PROGRESS CIRCLE
  */
 
-const circleColor = ref("#55b303");
+const circleColor = ref("#3D81F6");
 
 /** from https://stackoverflow.com/a/27905268/830213 */
 function circlePath(cx: number, cy: number, r: number) {
@@ -611,6 +674,8 @@ onMounted(async () => {
 onUnmounted(() => {
   ytPlayer.destroy();
 
+  controller.abort();
+
   audio.pause();
   speechSynthesis.pause();
 });
@@ -619,7 +684,7 @@ onUnmounted(() => {
 <style scoped>
 .videoframe {
   background-color: black;
-  transition: opacity 1s;
+  transition: opacity 1.5s;
 }
 .blackedout {
   opacity: 100;
@@ -627,6 +692,7 @@ onUnmounted(() => {
 
 .visible {
   opacity: 0;
+  transition-delay: 0.5s;
 }
 
 svg {
@@ -657,8 +723,12 @@ path.value {
   stroke-dashoffset: calc(1 - var(--stroke-offset));
   /* transition: stroke-dashoffset 0.5s; */
 }
-
+/* 
 .timer {
   text-shadow: 0px 0px 6px hsl(0, 0%, 10%), 0px 0px 10px hsl(0, 0%, 50%);
+} */
+
+.btn {
+  @apply rounded-full text-2xl bg-black bg-opacity-50 hover:bg-opacity-80 text-white border h-16 w-16 grid place-content-center;
 }
 </style>
