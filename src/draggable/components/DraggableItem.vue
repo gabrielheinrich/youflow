@@ -22,8 +22,14 @@ export default {
   name: "DraggableItem",
   props: {
     item: Object,
-    position: Number,
-    containerId: Number,
+    position: {
+      type: Number,
+      required: true,
+    },
+    containerId: {
+      type: Number,
+      required: true,
+    },
   },
   setup(props, context) {
     const { item, position, containerId } = toRefs(props);

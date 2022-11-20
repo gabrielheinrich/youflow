@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts">
-import { toRefs } from "vue";
+import { PropType, toRefs } from "vue";
 import DraggableItem from "./DraggableItem.vue";
 import { useDraggableContainer } from "../composables/draggable";
 
@@ -27,7 +27,10 @@ export default {
     DraggableItem,
   },
   props: {
-    modelValue: Array,
+    modelValue: {
+      type: Array as PropType<any[]>,
+      required: true,
+    },
     transition: {
       default: "0",
       type: String,

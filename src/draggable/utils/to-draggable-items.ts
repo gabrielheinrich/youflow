@@ -1,11 +1,12 @@
-import { DraggableItem } from "../types/draggable-item.interface";
+import { DraggableItem } from "../composables/draggable";
+
 import { getIdGenerator } from "./id-generator";
 
 const draggableItemIdGenrator = getIdGenerator();
 
 export const toDraggableItems = (arr: Array<any>): Array<DraggableItem> => {
   return arr.map((e) => ({
-    id: draggableItemIdGenrator(),
+    id: draggableItemIdGenrator().toString(),
     data: e,
   }));
 };

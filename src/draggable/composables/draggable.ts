@@ -7,18 +7,18 @@ import {
   Ref,
   watchEffect,
 } from "vue";
-import { DraggableItem } from "../types/draggable-item.interface";
 import { changeArrayOrder } from "../utils/change-order";
 import { getIdGenerator } from "../utils/id-generator";
 import { throttle } from "../utils/throttle";
 import { toOriginalArray, toDraggableItems } from "../utils/to-draggable-items";
 
-interface DraggableItem {
+export interface DraggableItem {
   id: string;
+  data: any;
 }
 
-let itemCurrentlyDragging = ref<DraggableItem>(null);
-let containerIdCurrentlyDraggedOver = ref<number>(null);
+let itemCurrentlyDragging = ref<DraggableItem | null>(null);
+let containerIdCurrentlyDraggedOver = ref<number>();
 let transitioning = false;
 const containerIdGenerator = getIdGenerator();
 
@@ -49,7 +49,7 @@ const useDraggableContainer = (
       return;
     }
     items.value = items.value.filter(
-      (item) => item.id !== itemCurrentlyDragging.value.id
+      (item) => item.id !== itemCurrentlyDragging.value!.id
     );
   });
 
@@ -98,20 +98,20 @@ const useDraggableItem = (
   containerId: Ref<number>,
   context: SetupContext
 ) => {
-  const draggableItemEl = ref(null);
+  const draggableItemEl = ref<HTMLElement>();
 
   const isDragging = ref(
     item.value.id === itemCurrentlyDragging.value?.id ? true : false
   );
-  const middleY = ref(null);
+  const middleY = ref<number>();
 
   onMounted(async () => {
-    const box = draggableItemEl.value.getBoundingClientRect();
+    const box = draggableItemEl.value!.getBoundingClientRect();
     middleY.value = box.top + box.height / 2;
   });
 
   onUpdated(() => {
-    const box = draggableItemEl.value.getBoundingClientRect();
+    const box = draggableItemEl.value!.getBoundingClientRect();
     middleY.value = box.top + box.height / 2;
   });
 
@@ -127,7 +127,7 @@ const useDraggableItem = (
   };
 
   const onDragOver = throttle((e: DragEvent) => {
-    if (item.value.id === itemCurrentlyDragging.value.id) {
+    if (item.value.id === itemCurrentlyDragging.value?.id) {
       return;
     }
 
@@ -135,7 +135,7 @@ const useDraggableItem = (
       containerIdCurrentlyDraggedOver.value = containerId.value;
     }
 
-    const offset = middleY.value - e.clientY;
+    const offset = middleY.value ?? 0 - e.clientY;
 
     context.emit("itemDragOver", {
       position: offset > 0 ? position.value : position.value + 1,

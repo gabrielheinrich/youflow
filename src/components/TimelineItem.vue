@@ -10,7 +10,7 @@
       <i-material-symbols:delete-forever-outline />
     </button>
     <h2 class="rounded-md bg-black bg-opacity-20 px-2 py-1 text-base">
-      {{ exercise.name }}
+      {{ exercise!.name }}
     </h2>
   </div>
 </template>

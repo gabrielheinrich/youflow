@@ -1,4 +1,4 @@
-import { DraggableItem } from "../types/draggable-item.interface";
+import { DraggableItem } from "../composables/draggable";
 
 export const changeArrayOrder = (
   arr: Array<DraggableItem>,

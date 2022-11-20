@@ -32,6 +32,7 @@
                 :videoId="selectedExercise.srcId"
                 :position="selectedExercise.startSecond"
                 :mute="true"
+                :stopAtEnd="false"
               />
 
               <div
@@ -44,7 +45,7 @@
                     {{ selectedExercise.name }}
                   </h3>
                   <button
-                    @click="addToTimeline(selectedExercise)"
+                    @click="addToTimeline(selectedExercise!)"
                     class="pointer-events-auto text-sm text-white border px-2 py-1 rounded-md bg-opacity-20 bg-black"
                   >
                     Add to Timeline
@@ -89,14 +90,14 @@
             <div class="flex space-x-2">
               <button
                 class="w-8 h-8 grid place-content-center"
-                @click="titleRef.focus()"
+                @click="titleRef!.focus()"
               >
                 <i-material-symbols:edit-outline />
               </button>
               <input
                 type="text"
                 class="text-2xl font-semibold"
-                v-model="routine.name"
+                v-model="routine!.name"
                 ref="titleRef"
               />
             </div>
@@ -148,6 +149,7 @@
                 :position="0"
                 :videoId="selectedTimelineItem.exercise.srcId"
                 :mute="true"
+                :stopAtEnd="false"
               />
             </div>
           </div>
@@ -168,13 +170,13 @@
                 <div class="flex">
                   <button
                     class="w-6"
-                    @click="selectedTimelineItem.item.exerciseReps -= 1"
+                    @click="selectedTimelineItem!.item.exerciseReps -= 1"
                   >
                     -
                   </button>
                   <button
                     class="w-6"
-                    @click="selectedTimelineItem.item.exerciseReps += 1"
+                    @click="selectedTimelineItem!.item.exerciseReps += 1"
                   >
                     +
                   </button>
@@ -195,14 +197,14 @@
                 <div class="flex">
                   <button
                     class="w-6"
-                    @click="selectedTimelineItem.item.cooldownTimeSecs -= 1"
+                    @click="selectedTimelineItem!.item.cooldownTimeSecs -= 1"
                   >
                     -
                   </button>
 
                   <button
                     class="w-6"
-                    @click="selectedTimelineItem.item.cooldownTimeSecs += 1"
+                    @click="selectedTimelineItem!.item.cooldownTimeSecs += 1"
                   >
                     +
                   </button>
@@ -265,7 +267,7 @@
         </h2>
         <TimelineItemInspector
           v-if="selection?.type == 'TimelineItem'"
-          v-bind="getTimelineItemById(selection.id)"
+          v-bind="getTimelineItemById(selection!.id)"
         />
       </div>
     </div>
@@ -398,7 +400,7 @@ const deleteTimelineItem = (item: TTimelineItem) => {
 };
 
 const save = () => {
-  const index = store.workouts.findIndex((w) => w.id === routine.value.id);
+  const index = store.workouts.findIndex((w) => w.id === routine.value!.id);
   const workout = JSON.parse(JSON.stringify(routine.value)) as Workout;
   if (index == -1) {
     store.workouts.push(workout);
@@ -410,7 +412,7 @@ const save = () => {
 };
 
 const remove = () => {
-  const index = store.workouts.findIndex((w) => w.id === routine.value.id);
+  const index = store.workouts.findIndex((w) => w.id === routine.value!.id);
   if (index >= 0) {
     store.workouts.splice(index, 1);
   }

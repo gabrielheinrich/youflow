@@ -77,7 +77,7 @@ watchEffect(async () => {
   if (!mounted.value) return;
   if (props.videoId) {
     if (!ytPlayer.value) {
-      ytPlayer.value = await initPlayer(props.videoId);
+      ytPlayer.value = await initPlayer();
       if (mute) {
         ytPlayer.value.mute();
       }
