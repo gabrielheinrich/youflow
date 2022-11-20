@@ -2,7 +2,7 @@
   <div class="border-b">
     <header class="grid grid-cols-3 h-12 items-center px-3">
       <router-link :to="{ name: 'Home' }">
-        <h1 class="font-bold text-lg">YouPractice</h1></router-link
+        <h1 class="font-bold text-lg">YouFlow</h1></router-link
       >
       <div class="flex justify-center">
         <input
