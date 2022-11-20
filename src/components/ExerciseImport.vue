@@ -28,13 +28,31 @@
     </div>
 
     <div
-      class="max-w-screen-sm aspect-video w-full bg-black mx-auto mb-4"
-    ></div>
+      class="max-w-screen-sm aspect-video w-full bg-neutral-100 mx-auto mb-4"
+    >
+      <YoutubeClipPlayer
+        :startPosition="startPosition"
+        :endPosition="endPosition"
+        @update:position="position = $event"
+        :position="startPosition"
+        :seekPosition="playHead"
+        :playing="true"
+        :videoId="youtubeId"
+        @loaded="
+          (duration = $event.duration), (endPosition = Math.min(duration, 60))
+        "
+        stopAtEnd
+      />
+    </div>
+    <div>{{ formatTime(position) }}</div>
 
     <ClipMarker
+      v-if="duration"
       v-model:startPosition="startPosition"
       v-model:endPosition="endPosition"
-      :maxPosition="2000"
+      :maxPosition="duration"
+      :playHead="position"
+      @update:playHead="updatePlayHead"
     />
 
     <div class="">
@@ -64,10 +82,12 @@
 <script setup lang="ts">
 import AppHeader from "@/components/AppHeader.vue";
 import ClipMarker from "@/components/ClipMarker.vue";
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { Exercise } from "@/types";
 import { ulid } from "ulid";
 import { getWorkoutStore } from "@/stores/workoutStore";
+import YoutubeClipPlayer from "@/components/YoutubeClipPlayer.vue";
+import { formatTime } from "@/utils/formatTime";
 
 const store = getWorkoutStore();
 const name = ref("");
@@ -80,6 +100,18 @@ const error = ref<Error>();
 
 const startPosition = ref(0);
 const endPosition = ref(0);
+
+const position = ref(0);
+const playHead = ref<number | undefined>(undefined);
+
+const duration = ref(0);
+
+const updatePlayHead = async (newPosition: number) => {
+  console.log("updatePlayead", newPosition);
+  playHead.value = newPosition;
+  await nextTick();
+  playHead.value = undefined;
+};
 
 const youtubeId = computed(() => {
   const match = url.value.match(/v=([^&]+)/);

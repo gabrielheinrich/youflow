@@ -23,19 +23,30 @@
               v-if="selectedExercise"
               class="absolute inset-0 grid grid-rows-3"
             >
-              <div></div>
-              <div class="grid place-content-center">
-                <h3 class="font-semibold mb-2">
-                  {{ selectedExercise.name }}
-                </h3>
-              </div>
-              <div class="flex justify-center items-start">
-                <button
-                  @click="addToTimeline(selectedExercise)"
-                  class="text-sm text-white border px-2 py-1 rounded-md"
-                >
-                  Add to Timeline
-                </button>
+              <YoutubeClipPlayer
+                :startPosition="selectedExercise.startSecond"
+                :endPosition="selectedExercise.endSecond"
+                :playing="false"
+                :videoId="selectedExercise.srcId"
+                :position="selectedExercise.startSecond"
+              />
+
+              <div
+                class="absolute inset-0 z-10 grid place-content-center pointer-events-none"
+              >
+                <div class="flex items-center flex-col">
+                  <h3
+                    class="font-semibold mb-2 bg-opacity-20 px-2 py-1 rounded-md bg-black text-2xl"
+                  >
+                    {{ selectedExercise.name }}
+                  </h3>
+                  <button
+                    @click="addToTimeline(selectedExercise)"
+                    class="pointer-events-auto text-sm text-white border px-2 py-1 rounded-md bg-opacity-20 bg-black"
+                  >
+                    Add to Timeline
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -91,8 +102,27 @@
             </button>
           </div>
         </div>
-        <div class="relative flex justify-center py-8">
-          <div class="bg-black w-full aspect-video max-w-screen-md"></div>
+        <div class="py-8">
+          <h2 class="h-8 text-center font-medium text-lg">
+            <span v-if="selectedTimelineItem">
+              {{ selectedTimelineItem?.index! + 1 }} -
+              {{ selectedTimelineItem?.exercise.name }}
+            </span>
+          </h2>
+          <div class="relative flex justify-center">
+            <div
+              class="bg-black bg-neutral-100 w-full aspect-video max-w-screen-md"
+            >
+              <YoutubeClipPlayer
+                v-if="selectedTimelineItem"
+                :startPosition="selectedTimelineItem.exercise.startSecond"
+                :endPosition="selectedTimelineItem.exercise.endSecond"
+                :playing="true"
+                :position="0"
+                :videoId="selectedTimelineItem.exercise.srcId"
+              />
+            </div>
+          </div>
         </div>
         <div>
           <div class="flex space-x-4 items-baseline">
@@ -173,12 +203,13 @@ import { defineComponent, ref, watch, computed } from "vue";
 import { useRouter } from "vue-router";
 import { DraggableContainer, useDraggableItem } from "@/draggable";
 import ExerciseClip from "@/components/ExerciseClip.vue";
-import { TimelineItem as TTimelineItem, Workout } from "@/types";
+import { TimelineItem as TTimelineItem, Workout, Exercise } from "@/types";
 import { ulid } from "ulid";
 import TimelineItem from "@/components/TimelineItem.vue";
 import { getWorkoutStore } from "@/stores/workoutStore";
 import ExerciseImport from "@/components/ExerciseImport.vue";
 import { formatTime } from "@/utils/formatTime";
+import YoutubeClipPlayer from "@/components/YoutubeClipPlayer.vue";
 
 interface EntityId {
   id: string;
@@ -186,6 +217,12 @@ interface EntityId {
 }
 
 const selection = ref<EntityId>();
+
+const selectedTimelineItem = computed(() => {
+  if (selection.value?.type == "TimelineItem") {
+    return getTimelineItemById(selection.value.id);
+  }
+});
 
 const store = getWorkoutStore();
 
@@ -215,6 +252,9 @@ const getTimelineItemById = (id: string) => {
   return {
     index,
     item: routine.value!.timeline[index!],
+    exercise: store.getExerciseById(
+      routine.value!.timeline[index!].exerciseId
+    )!,
   };
 };
 

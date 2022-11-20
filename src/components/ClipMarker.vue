@@ -17,18 +17,28 @@
           class="w-[10px] h-8 bg-black absolute border-r-2 border-red-500"
           :style="{ left: `${startPosition}px` }"
           ref="startMarkerRef"
+          @click="emit('update:playHead', startPosition)"
         ></div>
         <div
           class="w-[10px] h-8 bg-black border-l-2 border-red-500 absolute"
           :style="{ left: `${endPosition + 10}px` }"
           ref="endMarkerRef"
+          @click="emit('update:playHead', endPosition - 1)"
         ></div>
 
         <div
-          class="bg-red-200 border-red-500 border-y-2 absolute h-8"
+          class="bg-red-200 border-red-500 border-y-2 absolute h-4 top-2"
+          @click="handleClick"
           :style="{
             width: `${endPosition - startPosition}px`,
             left: `${startPosition + 10}px`,
+          }"
+        ></div>
+
+        <div
+          class="border-red-500 border-l-[2px] w-[2px] absolute h-8"
+          :style="{
+            left: `${playHead + 10}px`,
           }"
         ></div>
       </div>
@@ -45,11 +55,13 @@ const props = defineProps<{
   startPosition: number;
   endPosition: number;
   maxPosition: number;
+  playHead: number;
 }>();
 
 const emit = defineEmits<{
   (e: "update:startPosition", value: number): void;
   (e: "update:endPosition", value: number): void;
+  (e: "update:playHead", value: number): void;
 }>();
 
 // const maxPosition = ref<number>(2000);
@@ -66,6 +78,12 @@ const timelineRef = ref<HTMLElement>();
 const endMarkerRef = ref<HTMLElement>();
 
 const name = ref<HTMLElement>();
+
+const handleClick = (e: MouseEvent) => {
+  const { left } = timelineRef.value!.getBoundingClientRect();
+  const x = e.clientX - left - 10;
+  emit("update:playHead", x);
+};
 
 const youtubeLink = ref<HTMLElement>();
 

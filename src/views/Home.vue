@@ -13,7 +13,12 @@
           :key="workout.id"
         >
           <div
-            class="aspect-video bg-black grid place-content-center bold text-white relative"
+            class="aspect-video bg-black grid place-content-center bold text-white relative bg-cover bg-center"
+            :style="{
+              backgroundImage: `url(${workoutStore.getWorkoutThumbnail(
+                workout.id
+              )})`,
+            }"
           >
             <h2>
               {{ workout.name }}
@@ -40,24 +45,6 @@ import AppHeader from "@/components/AppHeader.vue";
 import { getWorkoutStore } from "@/stores/workoutStore";
 
 const workoutStore = getWorkoutStore();
-const routines = [
-  {
-    id: "1",
-    title: "Yoga",
-  },
-  {
-    id: "2",
-    title: "Quick Stretch",
-  },
-  {
-    id: "3",
-    title: "Cardio",
-  },
-  {
-    id: "4",
-    title: "Meditation",
-  },
-];
 </script>
 
 <style scoped></style>

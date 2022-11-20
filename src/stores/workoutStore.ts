@@ -1,6 +1,6 @@
-import { Exercise, Workout } from "@/types";
+import { Exercise, Workout } from "../types";
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { getExerciseThumbnail } from "@/utils/getExerciseThumbnail";
+import { getExerciseThumbnail } from "../utils/getExerciseThumbnail";
 
 interface WorkoutStore {
   workouts: Workout[];
@@ -19,8 +19,17 @@ const useStore = defineStore("workouts", {
       return state.exercises.find((e) => e.id === id);
     },
     getExerciseThumbnail: (state) => (id: string) => {
-      const exercise: Exercise = state.exercises.find((e) => e.id === id);
+      const exercise = state.exercises.find((e) => e.id === id);
       return getExerciseThumbnail(exercise);
+    },
+    getWorkoutThumbnail(state) {
+      return (id: string) => {
+        const workout = state.workouts.find((w) => w.id === id)!;
+        if (!workout) return "";
+        if (workout.timeline.length) {
+          return this.getExerciseThumbnail(workout.timeline[0].exerciseId);
+        }
+      };
     },
   },
 });
