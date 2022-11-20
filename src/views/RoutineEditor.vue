@@ -87,7 +87,7 @@
       <div class="p-3 space-y-2">
         <div>
           <div class="flex justify-between">
-            <div class="flex space-x-2">
+            <div class="flex space-x-2 flex-grow">
               <button
                 class="w-8 h-8 grid place-content-center"
                 @click="titleRef!.focus()"
@@ -96,7 +96,7 @@
               </button>
               <input
                 type="text"
-                class="text-2xl font-semibold w-full"
+                class="text-2xl font-semibold w-full flex-grow block"
                 v-model="routine!.name"
                 ref="titleRef"
               />
