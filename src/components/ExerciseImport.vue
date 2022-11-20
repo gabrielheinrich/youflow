@@ -45,7 +45,23 @@
         :mute="false"
       />
     </div>
-    <div>{{ formatTime(position) }}</div>
+    <div class="flex justify-center mb-2">{{ formatTime(position) }}</div>
+
+    <div class="flex space-x-2 justify-center">
+      <button @click="updatePlayHead(startPosition)" class="btn">
+        <i-material-symbols-arrow-back-ios-rounded
+          class="translate-x-1"
+        ></i-material-symbols-arrow-back-ios-rounded>
+      </button>
+      <button @click="updatePlayHead(startPosition)" class="btn">
+        <i-material-symbols-play-arrow class=""></i-material-symbols-play-arrow>
+      </button>
+      <button @click="updatePlayHead(endPosition)" class="btn">
+        <i-material-symbols-arrow-forward-ios-rounded
+          class="translate-x-0"
+        ></i-material-symbols-arrow-forward-ios-rounded>
+      </button>
+    </div>
 
     <ClipMarker
       v-if="duration"
@@ -159,4 +175,8 @@ const doImport = async () => {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+.btn {
+  @apply rounded-full text-lg  hover:bg-opacity-80 border-black border h-8 w-8 grid place-content-center;
+}
+</style>
